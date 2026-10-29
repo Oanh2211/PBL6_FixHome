@@ -1,0 +1,133 @@
+{
+  "app_name": "FixHome",
+  "common": {
+    "required": "*",
+    "continue": "Tiếp tục",
+    "back": "Quay lại",
+    "or": "hoặc",
+    "loading": "Đang xử lý...",
+    "google": "Google"
+  },
+  "register": {
+    "welcome": "Chào mừng bạn!",
+    "title": "Tạo tài khoản",
+    "customer_role": "Tôi là Khách hàng",
+    "technician_role": "Tôi là Kỹ thuật viên",
+    "customer_description": "Tìm thợ sửa điện lạnh, điện nước, đồ gia dụng nhanh chóng. Nhận báo giá minh bạch, an tâm chất lượng.",
+    "technician_description": "Tiếp cận hàng nghìn đơn sửa chữa mỗi ngày gần bạn. Chủ động thời gian, nhận thu nhập trực tiếp sau mỗi đơn.",
+    "continue_customer": "Tiếp tục đăng ký Khách hàng",
+    "continue_technician": "Tiếp tục đăng ký Kỹ thuật viên",
+    "full_name": "Họ và tên",
+    "full_name_hint": "Ví dụ: Nguyễn Văn An",
+    "email": "Email",
+    "email_hint": "Ví dụ: oanh@gmail.com",
+    "phone": "Số điện thoại di động",
+    "phone_hint": "Ví dụ: 0912345678",
+    "send_otp": "Gửi mã OTP",
+    "otp_title": "Mã xác thực OTP (6 chữ số)",
+    "resend_otp": "Chưa nhận mã?",
+    "password": "Mật khẩu",
+    "password_hint": "Tối thiểu 8 ký tự, có chữ và số",
+    "confirm_password": "Xác nhận mật khẩu",
+    "confirm_password_hint": "Nhập lại mật khẩu",
+    "referral_code": "Mã giới thiệu (Nếu có)",
+    "referral_hint": "Ví dụ: BINH234",
+    "submit": "Đăng ký ngay & Khám phá dịch vụ",
+    "social_register": "hoặc đăng ký nhanh bằng",
+    "already_account": "Đã có tài khoản?",
+    "login_now": "Đăng nhập ngay"
+  },
+  "validation": {
+    "full_name_required": "Vui lòng nhập họ và tên.",
+    "email_required": "Vui lòng nhập email.",
+    "email_invalid": "Email không hợp lệ.",
+    "phone_required": "Vui lòng nhập số điện thoại.",
+    "phone_invalid": "Số điện thoại không hợp lệ.",
+    "otp_required": "Vui lòng nhập mã OTP.",
+    "otp_invalid": "Mã OTP phải gồm 6 chữ số.",
+    "password_required": "Vui lòng nhập mật khẩu.",
+    "password_invalid": "Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ và số.",
+    "confirm_password_required": "Vui lòng xác nhận mật khẩu.",
+    "password_mismatch": "Mật khẩu xác nhận không khớp."
+  },
+  "message": {
+    "register_success": "Đăng ký tài khoản thành công!",
+    "otp_sent": "Mã OTP đã được gửi.",
+    "error": "Đã xảy ra lỗi. Vui lòng thử lại."
+  },
+  "language": {
+    "title": "Chọn ngôn ngữ",
+    "vietnamese": "Tiếng Việt",
+    "english": "Tiếng Anh",
+    "confirm": "Xác nhận",
+    "change": "Thay đổi ngôn ngữ"
+  },
+
+
+
+  "login": {
+    "title": "Đăng nhập",
+    "email": {
+      "label": "Email",
+      "hint": "Ví dụ: oanh@gmail.com"
+    },
+    "password": {
+      "label": "Mật khẩu",
+      "hint": "Nhập mật khẩu của bạn"
+    },
+    "remember": "Ghi nhớ đăng nhập",
+    "forgot_password": "Quên mật khẩu?",
+    "button": "Đăng nhập",
+    "success": "Đăng nhập thành công!",
+    "or_quick_login": "HOẶC ĐĂNG NHẬP NHANH BẰNG",
+    "google": "Google",
+    "no_account": "Chưa có tài khoản FixHome? ",
+    "register_now": "Đăng ký ngay",
+    "loading": "Đang đăng nhập...",
+    "please_wait": "Vui lòng chờ trong giây lát"
+  },
+  
+  "forgot": {
+  "title": "Quên mật khẩu",
+  "subtitle": "Nhập email đã đăng ký và mã OTP để đặt lại mật khẩu",
+  "registered_email": "Email đã đăng ký",
+  "email_hint": "Nhập email của bạn",
+  "otp_label": "Mã xác thực OTP",
+  "otp_hint": "Nhập mã OTP gồm 6 chữ số",
+  "send_otp": "Gửi mã OTP",
+  "otp_note": "Vui lòng kiểm tra email để nhận mã xác thực.",
+  "verify_and_continue": "Xác thực và tiếp tục",
+  "reset_title": "Đặt lại mật khẩu",
+  "new_password": "Mật khẩu mới",
+  "new_password_hint": "Nhập mật khẩu mới",
+  "confirm_new_password": "Xác nhận mật khẩu mới",
+  "confirm_password_hint": "Nhập lại mật khẩu mới",
+  "security_requirements": "YÊU CẦU BẢO MẬT",
+  "min_length": "Ít nhất 8 ký tự",
+  "uppercase_required": "Có ít nhất một chữ in hoa",
+  "lowercase_required": "Có ít nhất một chữ thường",
+  "number_required": "Có ít nhất một chữ số",
+  "special_required": "Có ít nhất một ký tự đặc biệt",
+  "update_and_login": "Cập nhật mật khẩu và đăng nhập",
+  "invalid_email": "Email không hợp lệ",
+  "otp_sent": "Mã OTP đã được gửi đến email của bạn",
+  "request_failed": "Không thể thực hiện yêu cầu. Vui lòng thử lại.",
+  "invalid_otp": "Mã OTP phải gồm 6 chữ số",
+  "otp_verified": "Xác thực OTP thành công",
+  "verify_failed": "Xác thực OTP thất bại",
+  "password_invalid": "Mật khẩu chưa đáp ứng các yêu cầu bảo mật",
+  "password_not_match": "Mật khẩu xác nhận không khớp",
+  "missing_reset_token": "Không tìm thấy mã đặt lại mật khẩu. Vui lòng xác thực OTP lại.",
+  "reset_success": "Đổi mật khẩu thành công",
+  "reset_failed": "Đổi mật khẩu thất bại",
+  "network_timeout": "Máy chủ phản hồi quá lâu. Vui lòng thử lại.",
+  "invalid_request": "Thông tin yêu cầu không hợp lệ",
+  "otp_expired": "Mã xác thực không hợp lệ hoặc đã hết hạn",
+  "endpoint_not_found": "Không tìm thấy API được yêu cầu",
+  "too_many_requests": "Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau.",
+  "server_error": "Máy chủ đang gặp sự cố. Vui lòng thử lại."
+}
+
+
+
+}
