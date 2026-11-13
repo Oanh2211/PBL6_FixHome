@@ -318,6 +318,20 @@
       "notification": "Notifications",
       "profile": "Account"
     },
+    "availability": {
+      "choose_location": "Choose working location",
+      "search_address": "Enter an address to search...",
+      "selected_location": "Selected location",
+      "tap_map": "Tap on the map to select a location",
+      "confirm_location": "Confirm location",
+      "select_location": "Please select a working location",
+      "location_not_found": "Address not found",
+      "gps_error": "Unable to get GPS location. Please check location permissions.",
+      "processing": "Updating availability...",
+      "enable_success": "You are now available for jobs",
+      "disable_success": "You are now unavailable for jobs",
+      "error": "Unable to update availability. Please try again."
+    },
     "quotes": {
       "detail_title": "Request details",
       "new_requests": "New repair requests",

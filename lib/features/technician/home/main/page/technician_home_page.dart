@@ -1,5 +1,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:fixhome/features/technician/home/activities_status/api/technician_availability_api.dart';
+import 'package:fixhome/features/technician/home/activities_status/cubit/technician_availability_cubit.dart';
+import 'package:fixhome/features/technician/home/activities_status/cubit/technician_availability_state.dart';
+import 'package:fixhome/features/technician/home/activities_status/model/technician_location_model.dart';
+import 'package:fixhome/features/technician/home/activities_status/page/widget/availability_location_dialog.dart';
 import 'package:fixhome/features/technician/home/quote/page/technician_quotes_page.dart';
 import 'package:fixhome/features/technician/home/quote/page/widget/new_quotes_section.dart';
 import 'package:fixhome/features/technician/home/register_profile/page/technician_registration_page.dart';
@@ -18,9 +23,18 @@ class TechnicianHomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) =>
-          TechnicianProfileCubit(api: TechnicianProfileApi())..getProfile(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (_) =>
+              TechnicianProfileCubit(api: TechnicianProfileApi())..getProfile(),
+        ),
+
+        BlocProvider(
+          create: (_) =>
+              TechnicianAvailabilityCubit(api: TechnicianAvailabilityApi()),
+        ),
+      ],
       child: const _TechnicianHomeView(),
     );
   }
@@ -179,67 +193,152 @@ class _AvailabilityCard extends StatelessWidget {
 
   const _AvailabilityCard({required this.profile, required this.completed});
 
+  // Mở popup chọn vị trí
+  Future<void> _handleEnable(BuildContext context) async {
+    final location = await showDialog<TechnicianLocationModel>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const AvailabilityLocationDialog(),
+    );
+
+    // Người dùng đóng popup hoặc không xác nhận
+    if (location == null || !context.mounted) return;
+
+    await context.read<TechnicianAvailabilityCubit>().enableAvailability(
+      location: location,
+    );
+  }
+
+  // Xử lý tắt nhận việc
+  Future<void> _handleDisable(BuildContext context) async {
+    await context.read<TechnicianAvailabilityCubit>().disableAvailability();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final available = completed && profile.isAvailable;
+    final initialAvailable = completed && profile.isAvailable;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.track_changes,
-            color: available ? AppColors.success : AppColors.textHint,
-            size: 20,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  completed
-                      ? (available
-                            ? 'technician.home_page.available'.tr()
-                            : 'technician.home_page.unavailable'.tr())
-                      : 'technician.home_page.ready_profile'.tr(),
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 12,
-                  ),
-                ),
-                if (!completed)
-                  Text(
-                    'technician.home_page.complete_to_work'.tr(),
-                    style: const TextStyle(
-                      color: Color(0xFFFF641F),
-                      fontSize: 10,
-                    ),
-                  ),
-              ],
+    return BlocConsumer<
+      TechnicianAvailabilityCubit,
+      TechnicianAvailabilityState
+    >(
+      listener: (context, state) {
+        if (state.status == TechnicianAvailabilityStatus.success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.successMessage ?? ''),
+              backgroundColor: AppColors.success,
             ),
+          );
+
+          // Tải lại profile để đồng bộ dữ liệu server
+          context.read<TechnicianProfileCubit>().refresh();
+
+          context.read<TechnicianAvailabilityCubit>().clearFeedback();
+        }
+
+        if (state.status == TechnicianAvailabilityStatus.failure) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                state.errorMessage ?? 'technician.availability.error'.tr(),
+              ),
+              backgroundColor: AppColors.error,
+            ),
+          );
+
+          context.read<TechnicianAvailabilityCubit>().clearFeedback();
+        }
+      },
+      builder: (context, state) {
+        final available = state.isAvailable ?? initialAvailable;
+
+        final loading = state.status == TechnicianAvailabilityStatus.loading;
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(12),
           ),
-          Switch(
-            value: available,
-            activeColor: AppColors.success,
-            onChanged: completed
-                ? (value) {
-                    context.read<TechnicianProfileCubit>().toggleAvailability(
-                      value,
-                    );
-                  }
-                : null,
+          child: Row(
+            children: [
+              Icon(
+                Icons.track_changes,
+                color: available ? AppColors.success : AppColors.textHint,
+                size: 20,
+              ),
+
+              const SizedBox(width: 8),
+
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      !completed
+                          ? 'technician.home_page.ready_profile'.tr()
+                          : available
+                          ? 'technician.home_page.available'.tr()
+                          : 'technician.home_page.unavailable'.tr(),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+
+                    if (!completed)
+                      Text(
+                        'technician.home_page.complete_to_work'.tr(),
+                        style: const TextStyle(
+                          color: Color(0xFFFF641F),
+                          fontSize: 10,
+                        ),
+                      ),
+
+                    if (loading)
+                      Text(
+                        'technician.availability.processing'.tr(),
+                        style: const TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 10,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+
+              if (loading)
+                const SizedBox(
+                  height: 22,
+                  width: 22,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppColors.primary,
+                  ),
+                )
+              else
+                Switch(
+                  value: available,
+                  activeColor: AppColors.success,
+                  onChanged: !completed
+                      ? null
+                      : (value) {
+                          if (value) {
+                            _handleEnable(context);
+                          } else {
+                            _handleDisable(context);
+                          }
+                        },
+                ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
-
 // =====================================================
 // INCOMPLETE PROFILE
 // =====================================================
