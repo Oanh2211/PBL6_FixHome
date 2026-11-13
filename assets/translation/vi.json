@@ -320,6 +320,20 @@
       "notification": "Thông báo",
       "profile": "Tài khoản"
     },
+    "availability": {
+      "choose_location": "Chọn vị trí nhận việc",
+      "search_address": "Nhập địa chỉ cần tìm...",
+      "selected_location": "Vị trí đã chọn",
+      "tap_map": "Chạm vào bản đồ để chọn vị trí",
+      "confirm_location": "Xác nhận vị trí",
+      "select_location": "Vui lòng chọn vị trí nhận việc",
+      "location_not_found": "Không tìm thấy địa chỉ",
+      "gps_error": "Không thể lấy vị trí GPS. Vui lòng kiểm tra quyền truy cập vị trí.",
+      "processing": "Đang cập nhật trạng thái...",
+      "enable_success": "Đã bật chế độ nhận việc thành công",
+      "disable_success": "Đã tắt chế độ nhận việc",
+      "error": "Không thể cập nhật trạng thái nhận việc. Vui lòng thử lại."
+    },
     "quotes": {
       "detail_title": "Chi tiết yêu cầu",
       "new_requests": "Yêu cầu sửa chữa mới",
