@@ -2,6 +2,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:fixhome/common/constants/app_color.dart';
 import 'package:fixhome/features/auth/register/cubit/register_cubit.dart';
 import 'package:fixhome/features/auth/register/cubit/register_state.dart';
+import 'package:fixhome/features/customer/main/page/customer_main_page.dart';
+import 'package:fixhome/features/technician/main/page/technician_main_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -84,14 +86,23 @@ class _RegisterPageState extends State<RegisterPage> {
                 backgroundColor: AppColors.success,
               ),
             );
+            if (state.role == UserRole.customer) {
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (_) => const MainCustomerPage()),
+              );
+            } else if (state.role == UserRole.technician) {
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (_) => const MainTechnicianPage()),
+              );
+            }
           }
         },
         builder: (context, state) {
           return Scaffold(
             backgroundColor: AppColors.background,
             appBar: AppBar(
-              toolbarHeight: 44,
-              backgroundColor: AppColors.background,
+              toolbarHeight: 50,
+              backgroundColor: AppColors.surface,
               surfaceTintColor: Colors.transparent,
               elevation: 0,
               leadingWidth: 44,
@@ -150,16 +161,16 @@ class _RegisterPageState extends State<RegisterPage> {
                     ],
 
                     if (state.currentStep == 3) ...[
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 20),
                       Text(
                         'register.title'.tr(),
                         style: const TextStyle(
-                          fontSize: 18,
+                          fontSize: 25,
                           color: AppColors.textPrimary,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 30),
                       _buildFormPanel(child: _buildStep3(context, state)),
                     ],
                   ],
@@ -657,15 +668,6 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget _buildStep3(BuildContext context, RegisterState state) {
     return Column(
       children: [
-        Text(
-          'register.title'.tr(),
-          style: const TextStyle(
-            fontSize: 18,
-            color: AppColors.textPrimary,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-
         const SizedBox(height: 18),
 
         // Mật khẩu
@@ -745,14 +747,27 @@ class _RegisterPageState extends State<RegisterPage> {
             onPressed: state.isSubmitting
                 ? null
                 : () {
-                    context.read<RegisterCubit>().registerCustomer(
-                      fullName: _fullNameController.text,
-                      phoneNumber: _phoneController.text,
-                      email: _emailController.text,
-                      password: _passwordController.text,
-                      confirmPassword: _confirmPasswordController.text,
-                      referralCode: _referralController.text,
-                    );
+                    final cubit = context.read<RegisterCubit>();
+
+                    if (state.role == UserRole.technician) {
+                      cubit.registerTechnician(
+                        fullName: _fullNameController.text,
+                        phoneNumber: _phoneController.text,
+                        email: _emailController.text,
+                        password: _passwordController.text,
+                        confirmPassword: _confirmPasswordController.text,
+                        referralCode: _referralController.text,
+                      );
+                    } else {
+                      cubit.registerCustomer(
+                        fullName: _fullNameController.text,
+                        phoneNumber: _phoneController.text,
+                        email: _emailController.text,
+                        password: _passwordController.text,
+                        confirmPassword: _confirmPasswordController.text,
+                        referralCode: _referralController.text,
+                      );
+                    }
                   },
             child: state.isSubmitting
                 ? const CircularProgressIndicator(color: AppColors.surface)

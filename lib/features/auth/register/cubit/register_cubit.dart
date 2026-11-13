@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'package:dio/dio.dart';
+import 'package:fixhome/core/storage/storage.dart';
+import 'package:fixhome/features/auth/register/models/responses/register_response_model.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'register_state.dart';
 import '../api/register_api.dart';
 import '../models/requests/send_otp_request_model.dart';
 import '../models/requests/verify_otp_request_model.dart';
-import '../models/requests/register_customer_request_model.dart';
+import '../models/requests/register_request_model.dart';
 
 class RegisterCubit extends Cubit<RegisterState> {
   final RegisterApi _registerApi;
@@ -253,8 +255,8 @@ class RegisterCubit extends Cubit<RegisterState> {
     emit(state.copyWith(isSubmitting: true, errorMessage: null));
 
     try {
-      await _registerApi.registerCustomer(
-        RegisterCustomerRequestModel(
+      RegisterResponse response = await _registerApi.registerCustomer(
+        RegisterRequestModel(
           fullName: fullName,
           phoneNumber: phoneNumber,
           email: email,
@@ -264,6 +266,11 @@ class RegisterCubit extends Cubit<RegisterState> {
         ),
       );
 
+      String accessToken = response.tokens.accessToken;
+      String refreshToken = response.tokens.refreshToken;
+
+      await Storage.saveTokens(accessToken, refreshToken);
+
       emit(
         state.copyWith(
           isSubmitting: false,
@@ -271,6 +278,96 @@ class RegisterCubit extends Cubit<RegisterState> {
         ),
       );
     } catch (e) {
+      emit(
+        state.copyWith(
+          isSubmitting: false,
+          errorMessage: 'Đăng ký thất bại. Vui lòng thử lại.',
+        ),
+      );
+    }
+  }
+
+  Future<void> registerTechnician({
+    required String fullName,
+    required String phoneNumber,
+    required String email,
+    required String password,
+    required String confirmPassword,
+    String? referralCode,
+  }) async {
+    String? passErr;
+    String? confirmPassErr;
+
+    if (password.length < 8) {
+      passErr = 'Mật khẩu phải tối thiểu 8 ký tự';
+    }
+    if (password != confirmPassword) {
+      confirmPassErr = 'Mật khẩu xác nhận không khớp';
+    }
+
+    if (passErr != null || confirmPassErr != null) {
+      emit(
+        state.copyWith(passError: passErr, confirmPassError: confirmPassErr),
+      );
+      return;
+    }
+
+    if (state.registrationToken == null) {
+      emit(
+        state.copyWith(
+          errorMessage: 'Thiếu mã xác thực token. Vui lòng thử lại.',
+        ),
+      );
+      return;
+    }
+
+    emit(state.copyWith(isSubmitting: true, errorMessage: null));
+
+    try {
+      RegisterResponse response = await _registerApi.registerTechnician(
+        RegisterRequestModel(
+          fullName: fullName,
+          phoneNumber: phoneNumber,
+          email: email,
+          password: password,
+          registrationToken: state.registrationToken!,
+          referralCode: referralCode?.isEmpty == true ? null : referralCode,
+        ),
+      );
+      String accessToken = response.tokens.accessToken;
+      String refreshToken = response.tokens.refreshToken;
+
+      await Storage.saveTokens(accessToken, refreshToken);
+
+      emit(
+        state.copyWith(
+          isSubmitting: false,
+          successMessage: 'Đăng ký tài khoản thành công!',
+        ),
+      );
+    } on DioException catch (e) {
+      print('========== REGISTER CUSTOMER ERROR ==========');
+      print('Error type: ${e.type}');
+      print('Error message: ${e.message}');
+      print('Status code: ${e.response?.statusCode}');
+      print('Response data: ${e.response?.data}');
+      print('Request URL: ${e.requestOptions.uri}');
+      print('Request headers: ${e.requestOptions.headers}');
+      print('Request body: ${e.requestOptions.data}');
+      print('Request extra: ${e.requestOptions.extra}');
+
+      emit(
+        state.copyWith(
+          isSubmitting: false,
+          errorMessage:
+              e.response?.data?['message']?.toString() ??
+              'Đăng ký thất bại (HTTP ${e.response?.statusCode}).',
+        ),
+      );
+    } catch (e, stackTrace) {
+      print('REGISTER CUSTOMER UNKNOWN ERROR: $e');
+      print(stackTrace);
+
       emit(
         state.copyWith(
           isSubmitting: false,
