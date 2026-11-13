@@ -12,9 +12,7 @@ part of 'login_api.dart';
 // ignore_for_file: unnecessary_brace_in_string_interps,no_leading_underscores_for_local_identifiers,unused_element,unnecessary_string_interpolations,unused_element_parameter,avoid_unused_constructor_parameters,unreachable_from_main,avoid_redundant_argument_values
 
 class _LoginApi implements LoginApi {
-  _LoginApi(this._dio, {this.baseUrl, this.errorLogger}) {
-    baseUrl ??= 'https://fixhome-api-gateway.onrender.com/api/v1';
-  }
+  _LoginApi(this._dio, {this.baseUrl, this.errorLogger});
 
   final Dio _dio;
 
@@ -24,7 +22,7 @@ class _LoginApi implements LoginApi {
 
   @override
   Future<LoginResponse> login(LoginRequest request) async {
-    final _extra = <String, dynamic>{};
+    final _extra = <String, dynamic>{'skipAuth': true};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};

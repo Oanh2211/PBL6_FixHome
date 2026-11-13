@@ -5,10 +5,12 @@ import 'package:fixhome/features/auth/login/models/login_response.dart';
 
 part 'login_api.g.dart';
 
-@RestApi(baseUrl: "https://fixhome-api-gateway.onrender.com/api/v1")
+@RestApi()
 abstract class LoginApi {
-  factory LoginApi(Dio dio, {String baseUrl}) = _LoginApi;
+  factory LoginApi(Dio dio, {String? baseUrl, ParseErrorLogger? errorLogger}) =
+      _LoginApi;
 
   @POST('/auth/login')
+  @Extra({'skipAuth': true})
   Future<LoginResponse> login(@Body() LoginRequest request);
 }

@@ -8,9 +8,13 @@ import 'package:fixhome/features/auth/forgot_password/model/response/verify_otp_
 
 part 'forgot_password_api.g.dart';
 
-@RestApi(baseUrl: 'https://fixhome-api-gateway.onrender.com/api/v1')
+@RestApi()
 abstract class ForgotPasswordApi {
-  factory ForgotPasswordApi(Dio dio, {String? baseUrl}) = _ForgotPasswordApi;
+  factory ForgotPasswordApi(
+    Dio dio, {
+    String? baseUrl,
+    ParseErrorLogger? errorLogger,
+  }) = _ForgotPasswordApi;
 
   @POST('/auth/password/forgot')
   Future<dynamic> forgotPassword(@Body() ForgotPasswordRequest request);

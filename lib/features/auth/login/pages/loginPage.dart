@@ -1,22 +1,22 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:fixhome/common/constants/app_color.dart';
-import 'package:fixhome/features/customer/main/customer_main_page.dart';
-import 'package:fixhome/features/technician/main/technician_main_page.dart';
+import 'package:fixhome/features/auth/login/api/login_api.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../cubit/login_cubit.dart';
 
 class LoginPage extends StatelessWidget {
-  const LoginPage({super.key});
+  final LoginApi api;
+  const LoginPage({super.key, required this.api});
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(create: (_) => LoginCubit(), child: LoginView());
+    return BlocProvider(create: (_) => LoginCubit(api), child: LoginView());
   }
 }
 
 class LoginView extends StatelessWidget {
-  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
   LoginView({super.key});
@@ -58,13 +58,15 @@ class LoginView extends StatelessWidget {
             ),
           );
           if (state.role == 'CUSTOMER') {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => const CustomerMainPage()),
-            );
+            // Navigator.of(context).pushReplacement(
+            //   MaterialPageRoute(builder: (_) => const MainCustomerPage()),
+            // );
+            Navigator.pushNamed(context, '/customer-main');
           } else if (state.role == 'TECHNICIAN') {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => const TechnicianMainPage()),
-            );
+            // Navigator.of(context).pushReplacement(
+            //   MaterialPageRoute(builder: (_) => const MainTechnicianPage()),
+            // );
+            Navigator.pushNamed(context, '/technician-main');
           }
 
           // Điều hướng chuyển trang (Home Page):
@@ -145,9 +147,9 @@ class LoginView extends StatelessWidget {
                   _buildFieldLabel('login.email.label'.tr()),
                   const SizedBox(height: 8),
                   TextField(
-                    controller: _phoneController,
+                    key: const Key('login_email_field'),
+                    controller: _emailController,
                     enabled: !isLoading,
-                    keyboardType: TextInputType.phone,
                     decoration: _buildInputDecoration(
                       hintText: 'login.email.hint'.tr(),
                       suffixIcon: const Icon(
@@ -166,6 +168,7 @@ class LoginView extends StatelessWidget {
                   _buildFieldLabel('login.password.label'.tr()),
                   const SizedBox(height: 8),
                   TextField(
+                    key: const Key('login_password_field'),
                     controller: _passwordController,
                     enabled: !isLoading,
                     obscureText: state.touchHiden,
@@ -258,13 +261,14 @@ class LoginView extends StatelessWidget {
 
                   // Nút đăng nhập
                   ElevatedButton(
+                    key: const Key('login_button'),
                     onPressed: isLoading
                         ? null
                         : () {
                             FocusScope.of(context).unfocus();
 
                             context.read<LoginCubit>().login(
-                              _phoneController.text,
+                              _emailController.text,
                               _passwordController.text,
                             );
                           },

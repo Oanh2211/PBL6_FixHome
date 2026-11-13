@@ -7,25 +7,23 @@ class LanguageCubit extends Cubit<LanguageState> {
   LanguageCubit(String initialLang)
     : super(LanguageInitial(selectedCode: initialLang));
 
-  // Hàm chọn ngôn ngữ (chưa bấm Tiếp tục)
-  void selectLanguage(String languageCode) {
+  // Chọn ngôn ngữ và đổi locale ngay lập tức
+  Future<void> selectLanguage(BuildContext context, String languageCode) async {
+    if (state is LanguageLoading) return;
+
+    // Cập nhật UI chọn card ngay lập tức
     emit(LanguageInitial(selectedCode: languageCode));
+
+    // Cập nhật ngôn ngữ toàn ứng dụng
+    try {
+      await context.setLocale(Locale(languageCode));
+    } catch (e) {
+      debugPrint('Lỗi đổi ngôn ngữ: $e');
+    }
   }
 
-  // Hàm xác nhận đổi ngôn ngữ và chuyển trang
-  Future<void> confirmLanguage(
-    BuildContext context,
-    String languageCode,
-  ) async {
-    emit(const LanguageLoading());
-
-    // Cập nhật ngôn ngữ qua thư viện easy_localization
-    if (languageCode == 'vi') {
-      await context.setLocale(const Locale('vi'));
-    } else {
-      await context.setLocale(const Locale('en'));
-    }
-
+  // Xác nhận và chuyển trang
+  void confirmLanguage(String languageCode) {
     emit(LanguageChangedSuccess(languageCode));
   }
 }
