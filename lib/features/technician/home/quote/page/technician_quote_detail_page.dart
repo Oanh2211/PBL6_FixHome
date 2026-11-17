@@ -1,8 +1,13 @@
+import 'dart:async';
+import 'package:dio/dio.dart';
+import 'package:fixhome/features/shared/widget/app_network_image.dart';
+import 'package:fixhome/features/technician/home/quote/page/technician_submit_quote_page.dart';
 import 'package:fixhome/features/technician/home/quote/page/widget/quote_status_badge.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:easy_localization/easy_localization.dart';
 
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:fixhome/common/constants/app_color.dart';
 
 import '../api/technician_quote_api.dart';
@@ -95,6 +100,139 @@ class _TechnicianQuoteDetailView extends StatelessWidget {
       ),
     );
   }
+  // ============================================
+  // ACKNOWLEDGE -> SUBMIT QUOTE PAGE
+  // ============================================
+
+  Future<void> _handleAcknowledge(
+    BuildContext context,
+    TechnicianQuoteDetailModel detail,
+  ) async {
+    final cubit = context.read<TechnicianQuoteCubit>();
+
+    try {
+      final success = await cubit.acknowledgeQuote(quoteId);
+
+      if (!context.mounted) return;
+
+      if (!success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('technician.quotes.acknowledge_error'.tr()),
+            backgroundColor: AppColors.error,
+          ),
+        );
+        return;
+      }
+
+      final submitted = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => BlocProvider.value(
+            value: cubit,
+            child: TechnicianSubmitQuotePage(quoteId: quoteId, detail: detail),
+          ),
+        ),
+      );
+
+      if (!context.mounted) return;
+
+      if (submitted == true) {
+        Navigator.pop(context, true);
+      }
+    } on DioException catch (e) {
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(cubit.getActionErrorMessage(e)),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('technician.quotes.acknowledge_error'.tr()),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
+
+  // ============================================
+  // DECLINE QUOTE
+  // ============================================
+
+  Future<void> _handleDecline(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text('technician.quotes.confirm_reject'.tr()),
+          content: Text('technician.quotes.confirm_reject_description'.tr()),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext, false);
+              },
+              child: Text('common.cancel'.tr()),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(dialogContext, true);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.error,
+                foregroundColor: Colors.white,
+              ),
+              child: Text('technician.quotes.reject'.tr()),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    final cubit = context.read<TechnicianQuoteCubit>();
+
+    try {
+      final success = await cubit.declineQuote(quoteId);
+
+      if (!context.mounted) return;
+
+      if (!success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('technician.quotes.decline_error'.tr()),
+            backgroundColor: AppColors.error,
+          ),
+        );
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('technician.quotes.decline_success'.tr()),
+          backgroundColor: AppColors.success,
+        ),
+      );
+
+      // Quay về màn hình Home kỹ thuật viên.
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    } catch (e) {
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(cubit.getActionErrorMessage(e)),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
 
   Widget _buildError(BuildContext context, String message) {
     return Center(
@@ -109,9 +247,7 @@ class _TechnicianQuoteDetailView extends StatelessWidget {
             const SizedBox(height: 12),
             ElevatedButton(
               onPressed: () {
-                context.read<TechnicianQuoteCubit>().getQuoteDetail(
-                  _currentQuoteId(context),
-                );
+                context.read<TechnicianQuoteCubit>().getQuoteDetail(quoteId);
               },
               child: Text('common.retry'.tr()),
             ),
@@ -119,12 +255,6 @@ class _TechnicianQuoteDetailView extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  int _currentQuoteId(BuildContext context) {
-    return (context.findAncestorWidgetOfExactType<TechnicianQuoteDetailPage>())
-            ?.quoteId ??
-        0;
   }
 
   Widget _buildDetail(BuildContext context, TechnicianQuoteDetailModel detail) {
@@ -145,7 +275,7 @@ class _TechnicianQuoteDetailView extends StatelessWidget {
               const SizedBox(height: 12),
 
               // 3. HÌNH ẢNH HIỆN TRƯỜNG
-              _buildMediaCard(detail),
+              _buildMediaCard(context, detail),
 
               const SizedBox(height: 12),
 
@@ -165,14 +295,6 @@ class _TechnicianQuoteDetailView extends StatelessWidget {
               const SizedBox(height: 12),
 
               // 7. CHI TIẾT HẠNG MỤC
-              _buildItemsCard(detail),
-
-              const SizedBox(height: 12),
-
-              // 8. KHOẢNG GIÁ THAM KHẢO
-              _buildPriceCard(detail),
-
-              const SizedBox(height: 20),
             ],
           ),
         ),
@@ -188,84 +310,11 @@ class _TechnicianQuoteDetailView extends StatelessWidget {
   // =====================================================
 
   Widget _buildCountdownCard(TechnicianQuoteDetailModel detail) {
-    final remaining = _remainingTime(detail.expiresAt);
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFFF641F), Color(0xFFEA580C)],
-        ),
-        borderRadius: BorderRadius.circular(13),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'technician.quotes.response_deadline'.tr(),
-            style: const TextStyle(color: Colors.white70, fontSize: 11),
-          ),
-
-          const SizedBox(height: 5),
-
-          Row(
-            children: [
-              const Icon(Icons.timer_outlined, color: Colors.white, size: 25),
-              const SizedBox(width: 8),
-              Text(
-                remaining,
-                style: const TextStyle(
-                  fontSize: 27,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 9),
-
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: const LinearProgressIndicator(
-              value: 1,
-              minHeight: 4,
-              backgroundColor: Colors.white30,
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-            ),
-          ),
-
-          if (detail.expiresAt != null) ...[
-            const SizedBox(height: 7),
-            Text(
-              'technician.quotes.expires_at'.tr(
-                args: [_formatDate(detail.expiresAt)],
-              ),
-              style: const TextStyle(color: Colors.white, fontSize: 10),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  String _remainingTime(DateTime? expiresAt) {
-    if (expiresAt == null) return '--:--';
-
-    final duration = expiresAt.difference(DateTime.now());
-
-    if (duration.isNegative) {
-      return 'technician.quotes.expired'.tr();
-    }
-
-    final hours = duration.inHours;
-    final minutes = duration.inMinutes.remainder(60);
-    final seconds = duration.inSeconds.remainder(60);
-
-    return '${hours.toString().padLeft(2, '0')}:'
-        '${minutes.toString().padLeft(2, '0')}:'
-        '${seconds.toString().padLeft(2, '0')}';
+    final deadline =
+        detail.expiresAt ??
+        detail.invitedAt?.add(const Duration(minutes: 5)) ??
+        DateTime.now().add(const Duration(minutes: 5));
+    return QuoteCountdownCard(expiresAt: deadline);
   }
 
   // =====================================================
@@ -286,10 +335,7 @@ class _TechnicianQuoteDetailView extends StatelessWidget {
                   color: const Color(0xFFEEF2FF),
                   borderRadius: BorderRadius.circular(9),
                 ),
-                child: const Icon(
-                  Icons.home_repair_service_outlined,
-                  color: AppColors.primary,
-                ),
+                child: _categoryIcon(detail.categoryIconUrl),
               ),
 
               const SizedBox(width: 10),
@@ -328,25 +374,23 @@ class _TechnicianQuoteDetailView extends StatelessWidget {
           _infoRow(
             Icons.category_outlined,
             'technician.quotes.category_id'.tr(),
-            detail.categoryId.toString(),
+            detail.categoryName.isNotEmpty
+                ? detail.categoryName
+                : detail.categoryId.toString(),
           ),
 
           _infoRow(
             Icons.devices_outlined,
             'technician.quotes.device_id'.tr(),
-            detail.deviceTypeId.toString(),
+            detail.deviceName.isNotEmpty
+                ? detail.deviceName
+                : detail.deviceTypeId.toString(),
           ),
 
           _infoRow(
             Icons.calendar_month_outlined,
             'technician.quotes.requested_time'.tr(),
             _requestedTime(detail),
-          ),
-
-          _infoRow(
-            Icons.repeat,
-            'technician.quotes.invite_round'.tr(),
-            detail.inviteRound.toString(),
           ),
 
           const SizedBox(height: 10),
@@ -397,23 +441,102 @@ class _TechnicianQuoteDetailView extends StatelessWidget {
     );
   }
 
+  Widget _categoryIcon(String url) {
+    final value = url.trim();
+
+    if (value.isEmpty) {
+      return const Icon(
+        Icons.home_repair_service_outlined,
+        color: AppColors.primary,
+        size: 22,
+      );
+    }
+
+    final path = Uri.tryParse(value)?.path.toLowerCase() ?? value.toLowerCase();
+
+    if (path.endsWith('.svg')) {
+      return SvgPicture.network(
+        value,
+        fit: BoxFit.contain,
+        colorFilter: const ColorFilter.mode(AppColors.primary, BlendMode.srcIn),
+        placeholderBuilder: (_) => const Icon(
+          Icons.home_repair_service_outlined,
+          color: AppColors.primary,
+        ),
+      );
+    }
+
+    return Image.network(
+      value,
+      fit: BoxFit.contain,
+      errorBuilder: (_, __, ___) => const Icon(
+        Icons.home_repair_service_outlined,
+        color: AppColors.primary,
+      ),
+    );
+  }
+
   // =====================================================
   // MEDIA
   // =====================================================
 
-  Widget _buildMediaCard(TechnicianQuoteDetailModel detail) {
+  // Thêm import ở đầu file:
+
+  // Thay thế hàm _buildMediaCard trong _TechnicianQuoteDetailView:
+  Widget _buildMediaCard(
+    BuildContext context,
+    TechnicianQuoteDetailModel detail,
+  ) {
+    final validMedia = detail.issueMedia
+        .where((m) => m.fileUrl.trim().isNotEmpty)
+        .toList();
+
     return _card(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'technician.quotes.media'.tr(),
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+          Row(
+            children: [
+              Text(
+                'technician.quotes.media'.tr(),
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              if (validMedia.isNotEmpty) ...[
+                const Spacer(),
+                Text(
+                  '${validMedia.length}',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ],
+            ],
           ),
 
           const SizedBox(height: 10),
 
-          if (detail.mediaIds.isEmpty)
+          if (validMedia.isNotEmpty)
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: validMedia
+                  .map((media) => _buildIssueMediaThumbnail(context, media))
+                  .toList(),
+            )
+          else if (detail.mediaIds.isNotEmpty)
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: detail.mediaIds
+                  .map((id) => _QuoteMediaThumbnail(mediaId: id))
+                  .toList(),
+            )
+          else
             Container(
               height: 95,
               width: double.infinity,
@@ -439,37 +562,75 @@ class _TechnicianQuoteDetailView extends StatelessWidget {
                   ),
                 ],
               ),
-            )
-          else
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: detail.mediaIds.map((id) {
-                return Container(
-                  width: 90,
-                  height: 90,
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceMuted,
-                    borderRadius: BorderRadius.circular(9),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.image_outlined,
-                        color: AppColors.primary,
-                      ),
-                      const SizedBox(height: 5),
-                      Text('ID: $id', style: const TextStyle(fontSize: 10)),
-                    ],
-                  ),
-                );
-              }).toList(),
             ),
         ],
       ),
     );
+  }
+
+  Widget _buildIssueMediaThumbnail(
+    BuildContext context,
+    TechnicianIssueMediaModel media,
+  ) {
+    final imageUrl = _sanitizeMediaUrl(media.fileUrl);
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => Scaffold(
+              backgroundColor: Colors.black,
+              appBar: AppBar(
+                backgroundColor: Colors.black,
+                foregroundColor: Colors.white,
+              ),
+              body: Center(
+                child: InteractiveViewer(
+                  minScale: 0.5,
+                  maxScale: 4,
+                  child: AppNetworkImage(
+                    url: imageUrl,
+                    fit: BoxFit.contain,
+                    fallback: const Icon(
+                      Icons.broken_image,
+                      color: Colors.white,
+                      size: 60,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+      child: AppNetworkImage(
+        url: imageUrl,
+        width: 90,
+        height: 90,
+        fit: BoxFit.cover,
+        borderRadius: BorderRadius.circular(10),
+        fallback: Container(
+          width: 90,
+          height: 90,
+          color: AppColors.surfaceMuted,
+          child: const Icon(
+            Icons.broken_image_outlined,
+            color: AppColors.textHint,
+            size: 32,
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _sanitizeMediaUrl(String rawUrl) {
+    var url = rawUrl.trim();
+    final markdownMatch = RegExp(r'\]\((https?://[^)]+)\)').firstMatch(url);
+    if (markdownMatch != null) {
+      return markdownMatch.group(1)!;
+    }
+    return url.replaceAll('[', '').replaceAll(']', '');
   }
 
   // =====================================================
@@ -827,8 +988,7 @@ class _TechnicianQuoteDetailView extends StatelessWidget {
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed:
-                          onRejectQuote ?? () => _showNotConnected(context),
+                      onPressed: () => _handleDecline(context),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.textSecondary,
                         side: const BorderSide(color: AppColors.border),
@@ -849,8 +1009,7 @@ class _TechnicianQuoteDetailView extends StatelessWidget {
                   Expanded(
                     flex: 2,
                     child: ElevatedButton.icon(
-                      onPressed:
-                          onSendQuote ?? () => _showNotConnected(context),
+                      onPressed: () => _handleAcknowledge(context, detail),
                       icon: const Icon(
                         Icons.monetization_on_outlined,
                         size: 17,
@@ -987,5 +1146,289 @@ class _TechnicianQuoteDetailView extends StatelessWidget {
 
   String _money(double amount) {
     return '${NumberFormat('#,##0', 'vi_VN').format(amount)} đ';
+  }
+}
+
+class QuoteCountdownCard extends StatefulWidget {
+  final DateTime? expiresAt;
+  const QuoteCountdownCard({super.key, required this.expiresAt});
+
+  @override
+  State<QuoteCountdownCard> createState() => _QuoteCountdownCardState();
+}
+
+class _QuoteCountdownCardState extends State<QuoteCountdownCard> {
+  Timer? _timer;
+  Duration _remaining = Duration.zero;
+
+  @override
+  void initState() {
+    super.initState();
+    _tick();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
+  }
+
+  void _tick() {
+    final deadline = widget.expiresAt;
+    final diff = deadline == null
+        ? Duration.zero
+        : deadline.difference(DateTime.now());
+    if (!mounted) return;
+    setState(() => _remaining = diff.isNegative ? Duration.zero : diff);
+    if (_remaining == Duration.zero) _timer?.cancel();
+  }
+
+  @override
+  void didUpdateWidget(covariant QuoteCountdownCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.expiresAt != widget.expiresAt) {
+      _timer?.cancel();
+      _tick();
+      if (_remaining > Duration.zero) {
+        _timer = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  String get _label {
+    if (_remaining == Duration.zero) return 'Đã hết hạn';
+    final h = _remaining.inHours.toString().padLeft(2, '0');
+    final m = _remaining.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final sec = _remaining.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return '$h:$m:$sec';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFF641F), Color(0xFFEA580C)],
+        ),
+        borderRadius: BorderRadius.circular(13),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'technician.quotes.response_deadline'.tr(),
+            style: const TextStyle(color: Colors.white70, fontSize: 11),
+          ),
+          const SizedBox(height: 5),
+          Row(
+            children: [
+              const Icon(Icons.timer_outlined, color: Colors.white, size: 25),
+              const SizedBox(width: 8),
+              Text(
+                _label,
+                style: const TextStyle(
+                  fontSize: 27,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+          if (widget.expiresAt != null) ...[
+            const SizedBox(height: 7),
+            Text(
+              'technician.quotes.expires_at'.tr(
+                args: [
+                  DateFormat(
+                    'HH:mm - dd/MM/yyyy',
+                  ).format(widget.expiresAt!.toLocal()),
+                ],
+              ),
+              style: const TextStyle(color: Colors.white, fontSize: 10),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _QuoteMediaThumbnail extends StatefulWidget {
+  final int mediaId;
+
+  const _QuoteMediaThumbnail({required this.mediaId});
+
+  @override
+  State<_QuoteMediaThumbnail> createState() => _QuoteMediaThumbnailState();
+}
+
+class _QuoteMediaThumbnailState extends State<_QuoteMediaThumbnail> {
+  Future<Map<String, dynamic>>? _mediaFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMedia();
+  }
+
+  void _loadMedia() {
+    _mediaFuture = TechnicianQuoteApi().getMedia(widget.mediaId);
+  }
+
+  @override
+  void didUpdateWidget(covariant _QuoteMediaThumbnail oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.mediaId != widget.mediaId) {
+      _loadMedia();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _mediaFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SizedBox(
+            width: 90,
+            height: 90,
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (snapshot.hasError) {
+          debugPrint('MEDIA LOAD ERROR: ${snapshot.error}');
+
+          return _errorWidget();
+        }
+
+        if (!snapshot.hasData) {
+          return _errorWidget();
+        }
+
+        final imageUrl = _extractImageUrl(snapshot.data!);
+
+        debugPrint('MEDIA ID: ${widget.mediaId}');
+        debugPrint('IMAGE URL: $imageUrl');
+
+        if (imageUrl.isEmpty || !imageUrl.startsWith('https://')) {
+          return _errorWidget();
+        }
+
+        return GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => Scaffold(
+                  backgroundColor: Colors.black,
+                  appBar: AppBar(
+                    backgroundColor: Colors.black,
+                    foregroundColor: Colors.white,
+                  ),
+                  body: Center(
+                    child: InteractiveViewer(
+                      minScale: 0.5,
+                      maxScale: 4,
+                      child: Image.network(
+                        imageUrl,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, error, __) {
+                          debugPrint('FULL IMAGE ERROR: $error');
+                          return const Icon(
+                            Icons.broken_image,
+                            color: Colors.white,
+                            size: 60,
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: Image.network(
+              imageUrl,
+              width: 90,
+              height: 90,
+              fit: BoxFit.cover,
+              loadingBuilder: (context, child, progress) {
+                if (progress == null) return child;
+
+                return const SizedBox(
+                  width: 90,
+                  height: 90,
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              },
+              errorBuilder: (context, error, stackTrace) {
+                debugPrint('THUMBNAIL IMAGE ERROR: $error');
+                return _errorWidget();
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _errorWidget() {
+    return Container(
+      width: 90,
+      height: 90,
+      decoration: BoxDecoration(
+        color: Colors.grey.shade200,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: const Icon(
+        Icons.broken_image_outlined,
+        color: Colors.grey,
+        size: 32,
+      ),
+    );
+  }
+
+  String _extractImageUrl(Map<String, dynamic> data) {
+    dynamic value = data['file_url'] ?? data['url'] ?? data['fileUrl'];
+
+    // Nếu API trả về dữ liệu nằm trong data
+    if (value == null && data['data'] is Map) {
+      final nested = Map<String, dynamic>.from(data['data']);
+      value = nested['file_url'] ?? nested['url'] ?? nested['fileUrl'];
+    }
+
+    if (value == null) return '';
+
+    String url = value.toString().trim();
+
+    // Xử lý trường hợp URL bị bọc trong Markdown
+    final markdownMatch = RegExp(r'\]\((https?://[^)]+)\)').firstMatch(url);
+
+    if (markdownMatch != null) {
+      url = markdownMatch.group(1)!;
+    } else {
+      url = url.replaceAll('[', '').replaceAll(']', '');
+    }
+
+    return url;
+  }
+
+  Widget _placeholder(Widget child) {
+    return Container(
+      width: 90,
+      height: 90,
+      decoration: BoxDecoration(
+        color: AppColors.surfaceMuted,
+        borderRadius: BorderRadius.circular(9),
+      ),
+      child: Center(child: child),
+    );
   }
 }

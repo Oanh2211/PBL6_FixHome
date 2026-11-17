@@ -1,10 +1,13 @@
 import '../model/technician_quote_model.dart';
 
+// Trạng thái ban đầu
 abstract class TechnicianQuoteState {}
 
 class TechnicianQuoteInitial extends TechnicianQuoteState {}
 
-// Danh sách yêu cầu
+// ===============================
+// DANH SÁCH YÊU CẦU
+// ===============================
 
 class TechnicianQuoteLoading extends TechnicianQuoteState {}
 
@@ -34,7 +37,9 @@ class TechnicianQuoteError extends TechnicianQuoteState {
   TechnicianQuoteError(this.message);
 }
 
-// Chi tiết yêu cầu
+// ===============================
+// CHI TIẾT YÊU CẦU
+// ===============================
 
 class TechnicianQuoteDetailLoading extends TechnicianQuoteState {}
 
@@ -48,4 +53,18 @@ class TechnicianQuoteDetailError extends TechnicianQuoteState {
   final String message;
 
   TechnicianQuoteDetailError(this.message);
+}
+
+// ===============================
+// GỬI BÁO GIÁ
+// ===============================
+
+class TechnicianSubmitQuoteLoading extends TechnicianQuoteState {}
+
+class TechnicianSubmitQuoteSuccess extends TechnicianQuoteState {}
+
+class TechnicianSubmitQuoteError extends TechnicianQuoteState {
+  final String message;
+
+  TechnicianSubmitQuoteError(this.message);
 }

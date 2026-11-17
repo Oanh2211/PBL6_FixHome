@@ -1,3 +1,4 @@
+import 'package:fixhome/features/technician/account/specialties/models/device_type_model.dart';
 import 'package:fixhome/features/technician/account/specialties/models/technician_specialty_model.dart';
 import 'package:fixhome/features/technician/account/specialties/page/specialty_status_badge.dart';
 
@@ -16,7 +17,7 @@ import 'technician_specialty_page.dart';
 class SpecialtyDetailPage extends StatelessWidget {
   final int id;
   final List<SpecialtyOption> categories;
-  final List<SpecialtyOption> deviceTypes;
+  final List<DeviceTypeModel> deviceTypes;
 
   const SpecialtyDetailPage({
     super.key,
@@ -42,7 +43,7 @@ class SpecialtyDetailPage extends StatelessWidget {
 class _SpecialtyDetailView extends StatelessWidget {
   final int id;
   final List<SpecialtyOption> categories;
-  final List<SpecialtyOption> deviceTypes;
+  final List<DeviceTypeModel> deviceTypes;
 
   const _SpecialtyDetailView({
     required this.id,
@@ -155,6 +156,15 @@ class _SpecialtyDetailView extends StatelessWidget {
   // ================= MAIN CONTENT =================
 
   Widget _buildContent(BuildContext context, TechnicianSpecialtyModel item) {
+    // Chỉ lấy thiết bị thuộc dịch vụ đang xem
+    final serviceDevices = deviceTypes
+        .where((device) => device.categoryId == item.categoryId)
+        .toList();
+
+    // Chỉ lấy những thiết bị đã đăng ký thuộc dịch vụ này
+    final registeredDevices = serviceDevices
+        .where((device) => item.deviceTypeIds.contains(device.id))
+        .toList();
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(16),
@@ -212,8 +222,8 @@ class _SpecialtyDetailView extends StatelessWidget {
               _infoRow(
                 'technician.account.specialty_page.device_count_label'.tr(),
                 item.acceptAllDevices
-                    ? 'technician.account.specialty_page.all_devices'.tr()
-                    : '${item.deviceTypeIds.length} ${'technician.account.specialty_page.devices'.tr()}',
+                    ? '${serviceDevices.length} ${'technician.account.specialty_page.devices'.tr()}'
+                    : '${registeredDevices.length} ${'technician.account.specialty_page.devices'.tr()}',
               ),
 
               const SizedBox(height: 15),
@@ -248,12 +258,15 @@ class _SpecialtyDetailView extends StatelessWidget {
 
               const SizedBox(height: 15),
 
-              if (item.acceptAllDevices)
-                _deviceItem(
-                  Icons.devices,
-                  'technician.account.specialty_page.all_devices'.tr(),
+              if (registeredDevices.isEmpty && !item.acceptAllDevices)
+                Text(
+                  'technician.account.specialty_page.no_devices'.tr(),
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 12,
+                  ),
                 )
-              else if (item.deviceTypeIds.isEmpty)
+              else if (item.acceptAllDevices && serviceDevices.isEmpty)
                 Text(
                   'technician.account.specialty_page.no_devices'.tr(),
                   style: const TextStyle(
@@ -262,15 +275,13 @@ class _SpecialtyDetailView extends StatelessWidget {
                   ),
                 )
               else
-                ...item.deviceTypeIds.map(
-                  (deviceId) => Padding(
-                    padding: const EdgeInsets.only(bottom: 9),
-                    child: _deviceItem(
-                      Icons.devices_other,
-                      getDeviceName(deviceId),
+                ...(item.acceptAllDevices ? serviceDevices : registeredDevices)
+                    .map(
+                      (device) => Padding(
+                        padding: const EdgeInsets.only(bottom: 9),
+                        child: _deviceItem(Icons.devices_other, device.name),
+                      ),
                     ),
-                  ),
-                ),
             ],
           ),
         ),
@@ -398,17 +409,48 @@ class _SpecialtyDetailView extends StatelessWidget {
     BuildContext context,
     TechnicianSpecialtyModel item,
   ) async {
-    final experienceValues = ['under_2_years', '3_5_years', 'over_5_years'];
-    String experience = item.experienceLevel;
-    if (!experienceValues.contains(experience)) {
-      experience = item.experienceLevel == '3 - 5 năm'
-          ? '3_5_years'
-          : item.experienceLevel == 'Trên 5 năm'
-          ? 'over_5_years'
-          : 'under_2_years';
+    // Giá trị gửi lên API phải đúng enum backend.
+    // Đồng thời hỗ trợ dữ liệu cũ nếu API vẫn trả về format trước đây.
+    const experienceValues = [
+      'UNDER_TWO_YEARS',
+      'TWO_TO_FIVE_YEARS',
+      'OVER_FIVE_YEARS',
+    ];
+
+    String experience;
+    switch (item.experienceLevel) {
+      case 'UNDER_TWO_YEARS':
+      case 'under_2_years':
+      case '2 năm':
+      case 'Dưới 2 năm':
+        experience = 'UNDER_TWO_YEARS';
+        break;
+      case 'TWO_TO_FIVE_YEARS':
+      case '3_5_years':
+      case '3 - 5 năm':
+      case '2 - 5 năm':
+        experience = 'TWO_TO_FIVE_YEARS';
+        break;
+      case 'OVER_FIVE_YEARS':
+      case 'over_5_years':
+      case 'Trên 5 năm':
+        experience = 'OVER_FIVE_YEARS';
+        break;
+      default:
+        experience = 'UNDER_TWO_YEARS';
     }
     bool acceptAll = item.acceptAllDevices;
-    final selectedDevices = Set<int>.from(item.deviceTypeIds);
+    // Lọc thiết bị theo dịch vụ đang đăng ký
+    final serviceDevices = deviceTypes
+        .where((device) => device.categoryId == item.categoryId)
+        .toList();
+
+    // Chỉ giữ lại ID thiết bị thuộc dịch vụ này
+    final serviceDeviceIds = serviceDevices.map((e) => e.id).toSet();
+
+    final selectedDevices = Set<int>.from(
+      item.deviceTypeIds.where((id) => serviceDeviceIds.contains(id)),
+    );
     final evidenceControllers = item.evidenceUrls
         .map((url) => TextEditingController(text: url))
         .toList();
@@ -444,15 +486,15 @@ class _SpecialtyDetailView extends StatelessWidget {
                       ),
                       items: const [
                         DropdownMenuItem(
-                          value: 'under_2_years',
+                          value: 'UNDER_TWO_YEARS',
                           child: Text('Dưới 2 năm'),
                         ),
                         DropdownMenuItem(
-                          value: '3_5_years',
-                          child: Text('3 - 5 năm'),
+                          value: 'TWO_TO_FIVE_YEARS',
+                          child: Text('Từ 2 đến 5 năm'),
                         ),
                         DropdownMenuItem(
-                          value: 'over_5_years',
+                          value: 'OVER_FIVE_YEARS',
                           child: Text('Trên 5 năm'),
                         ),
                       ],
@@ -476,7 +518,7 @@ class _SpecialtyDetailView extends StatelessWidget {
                         'Thiết bị phụ trách',
                         style: TextStyle(fontWeight: FontWeight.w600),
                       ),
-                      ...deviceTypes.map(
+                      ...serviceDevices.map(
                         (device) => CheckboxListTile(
                           contentPadding: EdgeInsets.zero,
                           dense: true,
@@ -828,16 +870,21 @@ class _SpecialtyDetailView extends StatelessWidget {
 
   String _experienceLabel(String value) {
     switch (value) {
-      case '2 năm':
+      case 'UNDER_TWO_YEARS':
       case 'under_2_years':
+      case '2 năm':
+      case 'Dưới 2 năm':
         return 'technician.account.specialty_page.experience_2'.tr();
 
-      case '3 - 5 năm':
+      case 'TWO_TO_FIVE_YEARS':
       case '3_5_years':
+      case '3 - 5 năm':
+      case '2 - 5 năm':
         return 'technician.account.specialty_page.experience_3_5'.tr();
 
-      case 'Trên 5 năm':
+      case 'OVER_FIVE_YEARS':
       case 'over_5_years':
+      case 'Trên 5 năm':
         return 'technician.account.specialty_page.experience_over_5'.tr();
 
       default:
