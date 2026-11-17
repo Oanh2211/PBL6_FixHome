@@ -1,11 +1,13 @@
 import 'package:fixhome/common/constants/app_color.dart';
 import 'package:fixhome/features/customer/account/main/page/account_page.dart';
+import 'package:fixhome/features/customer/activity/page/customer_activity_page.dart';
 import 'package:fixhome/features/customer/home/main/page/service_category_page.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 
 class MainCustomerPage extends StatefulWidget {
-  const MainCustomerPage({super.key});
+  final int initialIndex;
+  const MainCustomerPage({super.key, this.initialIndex = 0});
 
   @override
   State<MainCustomerPage> createState() => _MainCustomerView();
@@ -16,7 +18,7 @@ class _MainCustomerView extends State<MainCustomerPage> {
 
   late final List<Widget> _pages = [
     ServiceCategoryPage(),
-    const Center(child: Text('Hoạt động Customer')), // Tab 1: Hoạt động
+    CustomerActivityPage(), // Tab 1: Hoạt động
     const Center(child: Text('Thông báo Customer')), // Tab 2: Thông báo
     AccountPage(
       onLoggedOut: () {

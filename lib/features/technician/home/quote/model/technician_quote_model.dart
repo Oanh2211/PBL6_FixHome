@@ -24,6 +24,7 @@ class TechnicianQuoteListResponse {
       content: list
           .whereType<Map<String, dynamic>>()
           .map(TechnicianQuoteModel.fromJson)
+          .where((quote) => quote.status.trim().toUpperCase() != 'EXPIRED')
           .toList(),
       page: _int(json['page'], 1),
       pageSize: _int(json['page_size'], 20),
@@ -53,6 +54,10 @@ class TechnicianQuoteModel {
   final String issueDescription;
   final DateTime? invitedAt;
   final DateTime? expiresAt;
+  final String categoryName;
+  final String categoryIconUrl;
+  final String deviceName;
+  final List<int> mediaIds;
 
   TechnicianQuoteModel({
     required this.quoteId,
@@ -72,7 +77,41 @@ class TechnicianQuoteModel {
     required this.issueDescription,
     this.invitedAt,
     this.expiresAt,
+    this.categoryName = '',
+    this.categoryIconUrl = '',
+    this.deviceName = '',
+    this.mediaIds = const [],
   });
+
+  TechnicianQuoteModel copyWithCatalog({
+    String? categoryName,
+    String? categoryIconUrl,
+    String? deviceName,
+  }) {
+    return TechnicianQuoteModel(
+      quoteId: quoteId,
+      orderId: orderId,
+      orderCode: orderCode,
+      status: status,
+      requestedTimeType: requestedTimeType,
+      scheduledAt: scheduledAt,
+      categoryId: categoryId,
+      deviceTypeId: deviceTypeId,
+      wardCode: wardCode,
+      address: address,
+      latitude: latitude,
+      longitude: longitude,
+      distanceKm: distanceKm,
+      inviteRound: inviteRound,
+      issueDescription: issueDescription,
+      invitedAt: invitedAt,
+      expiresAt: expiresAt,
+      categoryName: categoryName ?? this.categoryName,
+      categoryIconUrl: categoryIconUrl ?? this.categoryIconUrl,
+      deviceName: deviceName ?? this.deviceName,
+      mediaIds: mediaIds,
+    );
+  }
 
   factory TechnicianQuoteModel.fromJson(Map<String, dynamic> json) {
     return TechnicianQuoteModel(
@@ -93,6 +132,39 @@ class TechnicianQuoteModel {
       issueDescription: _str(json['issue_description']),
       invitedAt: _date(json['invited_at']),
       expiresAt: _date(json['expires_at']),
+      mediaIds: (json['media_ids'] as List? ?? []).map((e) => _int(e)).toList(),
+    );
+  }
+}
+
+class TechnicianIssueMediaModel {
+  final int mediaId;
+  final String mediaType;
+  final String fileUrl;
+  final String mimeType;
+  final int fileSizeBytes;
+  final double durationSeconds;
+  final DateTime? createdAt;
+
+  TechnicianIssueMediaModel({
+    required this.mediaId,
+    required this.mediaType,
+    required this.fileUrl,
+    required this.mimeType,
+    required this.fileSizeBytes,
+    required this.durationSeconds,
+    this.createdAt,
+  });
+
+  factory TechnicianIssueMediaModel.fromJson(Map<String, dynamic> json) {
+    return TechnicianIssueMediaModel(
+      mediaId: _int(json['media_id']),
+      mediaType: _str(json['media_type']),
+      fileUrl: _str(json['file_url']),
+      mimeType: _str(json['mime_type']),
+      fileSizeBytes: _int(json['file_size_bytes']),
+      durationSeconds: _double(json['duration_seconds']),
+      createdAt: _date(json['created_at']),
     );
   }
 }
@@ -100,7 +172,6 @@ class TechnicianQuoteModel {
 class TechnicianQuoteDetailModel extends TechnicianQuoteModel {
   final String customerNote;
   final String contactName;
-  final List<int> mediaIds;
   final double estimatedMinAmount;
   final double estimatedMaxAmount;
   final double discountAmount;
@@ -108,6 +179,7 @@ class TechnicianQuoteDetailModel extends TechnicianQuoteModel {
   final String note;
   final DateTime? respondedAt;
   final List<TechnicianQuoteItemModel> items;
+  final List<TechnicianIssueMediaModel> issueMedia;
 
   TechnicianQuoteDetailModel({
     required super.quoteId,
@@ -127,9 +199,12 @@ class TechnicianQuoteDetailModel extends TechnicianQuoteModel {
     required super.issueDescription,
     super.invitedAt,
     super.expiresAt,
+    super.categoryName,
+    super.categoryIconUrl,
+    super.deviceName,
+    super.mediaIds,
     required this.customerNote,
     required this.contactName,
-    required this.mediaIds,
     required this.estimatedMinAmount,
     required this.estimatedMaxAmount,
     required this.discountAmount,
@@ -137,11 +212,13 @@ class TechnicianQuoteDetailModel extends TechnicianQuoteModel {
     required this.note,
     this.respondedAt,
     required this.items,
+    this.issueMedia = const [],
   });
 
   factory TechnicianQuoteDetailModel.fromJson(Map<String, dynamic> json) {
     final itemList = json['items'] as List? ?? [];
     final mediaList = json['media_ids'] as List? ?? [];
+    final issueMediaList = json['issue_media'] as List? ?? [];
 
     return TechnicianQuoteDetailModel(
       quoteId: _int(json['quote_id']),
@@ -164,6 +241,10 @@ class TechnicianQuoteDetailModel extends TechnicianQuoteModel {
       customerNote: _str(json['customer_note']),
       contactName: _str(json['contact_name']),
       mediaIds: mediaList.map((e) => _int(e)).toList(),
+      issueMedia: issueMediaList
+          .whereType<Map<String, dynamic>>()
+          .map(TechnicianIssueMediaModel.fromJson)
+          .toList(),
       estimatedMinAmount: _double(json['estimated_min_amount']),
       estimatedMaxAmount: _double(json['estimated_max_amount']),
       discountAmount: _double(json['discount_amount']),

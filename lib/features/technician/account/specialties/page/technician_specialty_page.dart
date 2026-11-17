@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:fixhome/features/technician/account/specialties/api/device_type_api.dart';
+import 'package:fixhome/features/technician/account/specialties/models/device_type_model.dart';
 import 'package:fixhome/features/technician/account/specialties/page/register_specialty_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -64,7 +65,7 @@ class _TechnicianSpecialtyViewState extends State<_TechnicianSpecialtyView> {
   final DeviceTypeApi _deviceApi = DeviceTypeApi(dio: DioClient.instance);
 
   List<SpecialtyOption> categories = [];
-  List<SpecialtyOption> deviceTypes = [];
+  List<DeviceTypeModel> deviceTypes = [];
 
   bool isCatalogLoading = true;
   String? catalogError;
@@ -84,7 +85,7 @@ class _TechnicianSpecialtyViewState extends State<_TechnicianSpecialtyView> {
     });
 
     try {
-      // 1. GET /service-categories
+      // 1. Lấy danh sách dịch vụ
       final List<ServiceCategoryModel> categoryModels = await _categoryApi
           .getCategories();
 
@@ -92,19 +93,21 @@ class _TechnicianSpecialtyViewState extends State<_TechnicianSpecialtyView> {
         return SpecialtyOption(id: category.id, name: category.name);
       }).toList();
 
-      // 2. GET /service-categories/{categoryId}/device-types
-      // Gọi API thiết bị theo từng category.
+      // 2. Lấy thiết bị theo từng dịch vụ
       final deviceResults = await Future.wait(
         categoryModels.map(
           (category) => _deviceApi.getDeviceTypes(categoryId: category.id),
         ),
       );
 
-      final allDevices = <SpecialtyOption>[];
+      // Giữ nguyên DeviceTypeModel để không mất categoryId
+      final allDevices = <DeviceTypeModel>[];
 
       for (final devices in deviceResults) {
         for (final device in devices) {
-          allDevices.add(SpecialtyOption(id: device.id, name: device.name));
+          if (!allDevices.any((e) => e.id == device.id)) {
+            allDevices.add(device);
+          }
         }
       }
 

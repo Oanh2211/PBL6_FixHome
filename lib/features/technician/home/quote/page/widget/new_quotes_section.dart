@@ -237,6 +237,7 @@ class _NewQuotesContent extends StatelessWidget {
                 (quote) => Padding(
                   padding: const EdgeInsets.only(bottom: 10),
                   child: QuoteCard(
+                    key: ValueKey(quote.quoteId),
                     quote: quote,
                     onTap: () {
                       Navigator.push(

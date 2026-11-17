@@ -1,5 +1,5 @@
-import 'package:fixhome/features/customer/home/booking/pages/view_quote_page.dart';
 import 'package:fixhome/features/customer/home/booking/pages/widget/booking_step_indicator.dart';
+import 'package:fixhome/features/customer/home/find_technician/page/view_quote_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -59,7 +59,10 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
                       Navigator.of(dialogContext).pop();
 
                       Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(builder: (_) => ViewQuotePage()),
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              ViewQuotePage(orderId: state.booking!.id),
+                        ),
                       );
                     },
                     child: Text('common.confirm'.tr()),

@@ -1,9 +1,11 @@
+import 'package:fixhome/features/technician/home/quote/cubit/technician_quote_state.dart';
+import 'package:fixhome/features/technician/home/quote/model/technician_submit_quote_model.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dio/dio.dart';
 
 import '../api/technician_quote_api.dart';
 import '../model/technician_quote_model.dart';
-import 'technician_quote_state.dart';
 
 class TechnicianQuoteCubit extends Cubit<TechnicianQuoteState> {
   final TechnicianQuoteApi api;
@@ -19,8 +21,16 @@ class TechnicianQuoteCubit extends Cubit<TechnicianQuoteState> {
 
   List<TechnicianQuoteModel> _quotes = [];
 
+  bool _isActionRunning = false;
+  String? lastActionError;
+
   String? get selectedStatus => _selectedStatus;
+
   String? get selectedTimeType => _selectedTimeType;
+
+  // ===============================
+  // CHECK TECHNICIAN APPROVAL
+  // ===============================
 
   bool _isTechnicianNotApproved(Object error) {
     if (error is DioException) {
@@ -37,7 +47,10 @@ class TechnicianQuoteCubit extends Cubit<TechnicianQuoteState> {
     return false;
   }
 
+  // ===============================
   // GET LIST
+  // ===============================
+
   Future<void> getQuotes({
     bool refresh = false,
     bool showLoading = true,
@@ -62,7 +75,8 @@ class TechnicianQuoteCubit extends Cubit<TechnicianQuoteState> {
 
       if (isClosed) return;
 
-      _quotes = result.content;
+      _quotes = await api.enrichQuotes(result.content);
+      if (isClosed) return;
       _totalPages = result.totalPages;
       _totalElements = result.totalElements;
 
@@ -93,7 +107,10 @@ class TechnicianQuoteCubit extends Cubit<TechnicianQuoteState> {
     }
   }
 
+  // ===============================
   // FILTER STATUS
+  // ===============================
+
   Future<void> filterByStatus(String? status) async {
     _selectedStatus = status;
     _currentPage = 1;
@@ -101,7 +118,10 @@ class TechnicianQuoteCubit extends Cubit<TechnicianQuoteState> {
     await getQuotes();
   }
 
+  // ===============================
   // FILTER TIME
+  // ===============================
+
   Future<void> filterByTime(String? timeType) async {
     _selectedTimeType = timeType;
     _currentPage = 1;
@@ -109,7 +129,10 @@ class TechnicianQuoteCubit extends Cubit<TechnicianQuoteState> {
     await getQuotes();
   }
 
-  // LOAD NEXT PAGE
+  // ===============================
+  // LOAD MORE
+  // ===============================
+
   Future<void> loadMore() async {
     if (isClosed || _currentPage >= _totalPages) return;
 
@@ -126,7 +149,8 @@ class TechnicianQuoteCubit extends Cubit<TechnicianQuoteState> {
       if (isClosed) return;
 
       _currentPage = nextPage;
-      _quotes.addAll(result.content);
+      _quotes.addAll(await api.enrichQuotes(result.content));
+      if (isClosed) return;
       _totalPages = result.totalPages;
       _totalElements = result.totalElements;
 
@@ -153,7 +177,10 @@ class TechnicianQuoteCubit extends Cubit<TechnicianQuoteState> {
     }
   }
 
+  // ===============================
   // GET DETAIL
+  // ===============================
+
   Future<TechnicianQuoteDetailModel?> getQuoteDetail(int quoteId) async {
     if (isClosed) return null;
 
@@ -170,9 +197,84 @@ class TechnicianQuoteCubit extends Cubit<TechnicianQuoteState> {
     } catch (e) {
       if (isClosed) return null;
 
-      emit(TechnicianQuoteDetailError(e.toString()));
+      emit(TechnicianQuoteDetailError(_getErrorMessage(e)));
+
       return null;
     }
+  }
+
+  // ===============================
+  // ACKNOWLEDGE
+  // ===============================
+
+  Future<bool> acknowledgeQuote(int quoteId) async {
+    if (isClosed || _isActionRunning) return false;
+
+    _isActionRunning = true;
+
+    try {
+      await api.acknowledgeQuote(quoteId);
+      return true;
+    } catch (e) {
+      debugPrint('ACKNOWLEDGE QUOTE ERROR: $e');
+      return false;
+    } finally {
+      _isActionRunning = false;
+    }
+  }
+
+  // ===============================
+  // DECLINE
+  // ===============================
+
+  Future<bool> declineQuote(int quoteId) async {
+    if (isClosed || _isActionRunning) return false;
+
+    _isActionRunning = true;
+
+    try {
+      await api.declineQuote(quoteId);
+      return true;
+    } catch (e) {
+      debugPrint('DECLINE QUOTE ERROR: $e');
+      return false;
+    } finally {
+      _isActionRunning = false;
+    }
+  }
+
+  // ===============================
+  // SUBMIT QUOTE
+  // ===============================
+
+  Future<bool> submitQuote({
+    required int quoteId,
+    required TechnicianSubmitQuoteRequestModel request,
+  }) async {
+    if (isClosed || _isActionRunning) return false;
+
+    _isActionRunning = true;
+    lastActionError = null;
+
+    try {
+      await api.submitQuote(quoteId: quoteId, request: request);
+      return true;
+    } catch (e, stackTrace) {
+      lastActionError = _getErrorMessage(e);
+      debugPrint('SUBMIT QUOTE ERROR: $e');
+      debugPrintStack(stackTrace: stackTrace);
+      return false;
+    } finally {
+      _isActionRunning = false;
+    }
+  }
+
+  // ===============================
+  // ERROR MESSAGE
+  // ===============================
+
+  String getActionErrorMessage(Object error) {
+    return _getErrorMessage(error);
   }
 
   String _getErrorMessage(Object error) {
@@ -180,15 +282,22 @@ class TechnicianQuoteCubit extends Cubit<TechnicianQuoteState> {
       final data = error.response?.data;
 
       if (data is Map) {
-        return data['message']?.toString() ??
-            data['detail']?.toString() ??
-            'Đã xảy ra lỗi khi kết nối máy chủ.';
+        final message =
+            data['message'] ??
+            data['detail'] ??
+            data['error'] ??
+            data['errors'];
+        return message?.toString() ?? 'Đã xảy ra lỗi khi kết nối máy chủ.';
       }
 
       if (error.type == DioExceptionType.connectionError) {
         return 'Không thể kết nối máy chủ. Vui lòng kiểm tra Internet.';
       }
 
+      final responseText = error.response?.data?.toString();
+      if (responseText != null && responseText.isNotEmpty) {
+        return 'HTTP ${error.response?.statusCode ?? ''}: $responseText';
+      }
       return error.message ?? 'Đã xảy ra lỗi không xác định.';
     }
 

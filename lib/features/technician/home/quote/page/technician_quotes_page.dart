@@ -203,12 +203,12 @@ class _TechnicianQuotesViewState extends State<_TechnicianQuotesView> {
                         (quote) => Padding(
                           padding: const EdgeInsets.only(bottom: 11),
                           child: QuoteCard(
+                            key: ValueKey(quote.quoteId),
                             quote: quote,
                             onTap: () => _openDetail(quote),
                           ),
                         ),
                       ),
-
                     if (state.currentPage < state.totalPages)
                       const Padding(
                         padding: EdgeInsets.all(15),

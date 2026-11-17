@@ -674,14 +674,14 @@ class _RegisterSpecialtyViewState extends State<RegisterSpecialtyView> {
                 category.id,
                 'technician.account.specialty_page.register_specialty.under_2_years'
                     .tr(),
-                'UNDER_2_YEARS',
+                'UNDER_TWO_YEARS',
                 experience,
               ),
               _experienceChip(
                 category.id,
-                'technician.account.specialty_page.register_specialty.3_5_years'
+                'technician.account.specialty_page.register_specialty.2_5_years'
                     .tr(),
-                '3_5_YEARS',
+                'TWO_TO_FIVE_YEARS',
                 experience,
               ),
               _experienceChip(
