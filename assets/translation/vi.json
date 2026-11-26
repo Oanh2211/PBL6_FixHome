@@ -412,6 +412,24 @@
         "tech_note": "Ghi chú của KTV",
         "payment_breakdown": "Cơ cấu thanh toán minh bạch"
       }
+    },
+    "notification": {
+      "tab_all": "Tất cả",
+      "tab_service_order": "Dịch vụ & Đơn hàng",
+      "tab_system": "Hệ thống",
+      "today": "Hôm nay",
+      "earlier": "Hôm qua & Trước đó",
+      "new_count": "{} mới",
+      "mark_all_read": "Đọc tất cả",
+      "empty_title": "Chưa có thông báo nào",
+      "empty_desc": "Các cập nhật về đơn sửa chữa, báo giá và hệ thống sẽ hiển thị tại đây.",
+      "load_error": "Không thể tải danh sách thông báo. Vui lòng thử lại.",
+      "just_now": "Vừa xong",
+      "minutes_ago": "{} phút trước",
+      "yesterday_at": "Hôm qua, {}",
+      "days_ago": "{} ngày trước",
+      "order_ref_tag": "Đơn #{}",
+      "ref_tag": "#{}"
     }
   },
   "technician":{
@@ -836,11 +854,29 @@
         "submit_success": "Gửi chốt giá thành công!",
         "validation_empty_labor": "Vui lòng nhập mô tả công việc và tiền công"
       }
+    },
+    "notification": {
+      "tab_all": "Tất cả",
+      "tab_orders": "Đơn hàng",
+      "tab_income_wallet": "Thu nhập & Ví",
+      "tab_system": "Hệ thống",
+      "today": "HÔM NAY",
+      "earlier": "HÔM QUA & TRƯỚC ĐÓ",
+      "new_updates_count": "{} cập nhật mới",
+      "notifications_count": "{} thông báo",
+      "mark_all_read": "Đọc tất cả",
+      "important_badge": "Quan trọng",
+      "view_details_accept": "Xem chi tiết",
+      "update_profile_now": "Cập nhật hồ sơ ngay",
+      "order_ref": "Đơn #{}",
+      "empty_title": "Chưa có thông báo nào",
+      "empty_desc": "Thông báo về đơn hàng mới, thu nhập và hệ thống sẽ hiển thị tại đây.",
+      "load_error": "Không thể tải danh sách thông báo. Vui lòng thử lại.",
+      "just_now": "Vừa xong",
+      "minutes_ago": "{} phút trước",
+      "yesterday_at": "Hôm qua, {}",
+      "days_ago": "{} ngày trước"
     }
-    
-  
-
-
   }
   
   

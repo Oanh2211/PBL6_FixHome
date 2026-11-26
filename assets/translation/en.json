@@ -410,6 +410,24 @@
         "tech_note": "Technician's Note",
         "payment_breakdown": "Transparent Payment Breakdown"
       }
+    },
+    "notification": {
+      "tab_all": "All",
+      "tab_service_order": "Services & Orders",
+      "tab_system": "System",
+      "today": "Today",
+      "earlier": "Yesterday & Earlier",
+      "new_count": "{} new",
+      "mark_all_read": "Mark all read",
+      "empty_title": "No notifications yet",
+      "empty_desc": "Updates on repair orders, quotes, and system alerts will appear here.",
+      "load_error": "Unable to load notifications. Please try again.",
+      "just_now": "Just now",
+      "minutes_ago": "{} min ago",
+      "yesterday_at": "Yesterday, {}",
+      "days_ago": "{} days ago",
+      "order_ref_tag": "Order #{}",
+      "ref_tag": "#{}"
     }
   },
   "technician":{
@@ -833,8 +851,28 @@
         "submit_success": "Final quote submitted successfully!",
         "validation_empty_labor": "Please enter labor description and cost"
       }
+    },
+    "notification": {
+      "tab_all": "All",
+      "tab_orders": "Orders",
+      "tab_income_wallet": "Income & Wallet",
+      "tab_system": "System",
+      "today": "TODAY",
+      "earlier": "YESTERDAY & EARLIER",
+      "new_updates_count": "{} new updates",
+      "notifications_count": "{} notifications",
+      "mark_all_read": "Mark all read",
+      "important_badge": "Important",
+      "view_details_accept": "View details",
+      "update_profile_now": "Update profile now",
+      "order_ref": "Order #{}",
+      "empty_title": "No notifications yet",
+      "empty_desc": "Updates about new orders, income, and system alerts will appear here.",
+      "load_error": "Unable to load notifications. Please try again.",
+      "just_now": "Just now",
+      "minutes_ago": "{} min ago",
+      "yesterday_at": "Yesterday, {}",
+      "days_ago": "{} days ago"
     }
-    
-
   }
 }

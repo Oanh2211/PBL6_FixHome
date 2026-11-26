@@ -2,6 +2,7 @@ import 'package:fixhome/common/constants/app_color.dart';
 import 'package:fixhome/features/technician/account/main/page/technician_account_page.dart';
 import 'package:fixhome/features/technician/activity/page/technician_activity_page.dart';
 import 'package:fixhome/features/technician/home/main/page/technician_home_page.dart';
+import 'package:fixhome/features/technician/notification/page/technician_notification_page.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 
@@ -19,7 +20,7 @@ class _MainTechnicianView extends State<MainTechnicianPage> {
   final List<Widget> _pages = [
     const TechnicianHomePage(), // Tab 0: Trang chủ
     TechnicianActivityPage(), // Tab 1: Hoạt động
-    const Center(child: Text('Thông báo Tech')), // Tab 2: Thông báo
+    const TechnicianNotificationPage(), // Tab 2: Thông báo
     const TechnicianAccountPage(), // Tab 3: Tài khoản
   ];
 

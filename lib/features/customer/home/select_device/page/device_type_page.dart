@@ -241,7 +241,6 @@ class _DeviceTypeViewState extends State<_DeviceTypeView> {
 
   Widget _buildDeviceItem(DeviceTypeModel device) {
     final isSelected = _selectedDevice?.id == device.id;
-    final color = _getDeviceColor(device.code);
 
     return InkWell(
       key: Key('device_${device.id}'),
@@ -561,28 +560,6 @@ class _DeviceTypeViewState extends State<_DeviceTypeView> {
   }
 
   // ================= DEVICE COLORS =================
-
-  Color _getDeviceColor(String code) {
-    final value = code.toLowerCase();
-
-    if (value.contains('washing') || value.contains('washer')) {
-      return const Color(0xFF3156B8);
-    }
-
-    if (value.contains('air') || value.contains('conditioner')) {
-      return const Color(0xFF1687B8);
-    }
-
-    if (value.contains('water')) {
-      return const Color(0xFF168F9D);
-    }
-
-    if (value.contains('oven') || value.contains('microwave')) {
-      return const Color(0xFFE36C36);
-    }
-
-    return AppColors.primary;
-  }
 
   Color _getDeviceBackground(String code) {
     final value = code.toLowerCase();
