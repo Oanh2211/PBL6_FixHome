@@ -2,7 +2,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:fixhome/features/customer/home/find_technician/model/quote_models.dart';
 import 'package:fixhome/features/customer/home/find_technician/model/repair_order_model.dart';
 import 'package:fixhome/features/customer/home/find_technician/page/quote_detail_page.dart';
-import 'package:fixhome/features/customer/home/main/page/service_category_page.dart';
 import 'package:fixhome/features/customer/main/page/customer_main_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

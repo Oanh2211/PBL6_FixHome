@@ -2,6 +2,7 @@ import 'package:fixhome/common/constants/app_color.dart';
 import 'package:fixhome/features/customer/account/main/page/account_page.dart';
 import 'package:fixhome/features/customer/activity/page/customer_activity_page.dart';
 import 'package:fixhome/features/customer/home/main/page/service_category_page.dart';
+import 'package:fixhome/features/customer/notification/page/customer_notification_page.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 
@@ -19,7 +20,7 @@ class _MainCustomerView extends State<MainCustomerPage> {
   late final List<Widget> _pages = [
     ServiceCategoryPage(),
     CustomerActivityPage(), // Tab 1: Hoạt động
-    const Center(child: Text('Thông báo Customer')), // Tab 2: Thông báo
+    CustomerNotificationPage(), // Tab 2: Thông báo
     AccountPage(
       onLoggedOut: () {
         Navigator.of(
