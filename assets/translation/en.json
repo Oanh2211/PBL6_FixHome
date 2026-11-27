@@ -141,6 +141,15 @@
       "notification": "Notifications",
       "profile": "Account"
     },
+    "chat": {
+      "technician": "Technician",
+      "order": "Order",
+      "message_hint": "Message the technician...",
+      "load_error": "Unable to load this conversation. Please try again.",
+      "refresh_error": "Unable to sync new messages. Tap to retry.",
+      "load_older_error": "Unable to load older messages. Tap to retry.",
+      "send_error": "Unable to send your message. Please try again."
+    },
     "account": {
       "default_name": "My Account",
       "services": "SERVICES & OFFERS",
@@ -436,6 +445,15 @@
       "activity": "Activity",
       "notification": "Notifications",
       "profile": "Account"
+    },
+    "chat": {
+      "customer": "Customer",
+      "order": "Order",
+      "message_hint": "Message the customer...",
+      "load_error": "Unable to load this conversation. Please try again.",
+      "refresh_error": "Unable to sync new messages. Tap to retry.",
+      "load_older_error": "Unable to load older messages. Tap to retry.",
+      "send_error": "Unable to send your message. Please try again."
     },
     "availability": {
       "choose_location": "Choose working location",
@@ -789,7 +807,7 @@
       "search_hint": "Search order code, customer, phone...",
       "scheduled_badge": "Scheduled",
       "scheduled_slot": "Slot: {0}",
-      "call_btn": "Call",
+      "message_btn": "Message",
       "view_detail_btn": "View Details",
       "empty_orders": "No repair orders found in this tab",
       "status": {

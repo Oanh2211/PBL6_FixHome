@@ -1,0 +1,445 @@
+import 'dart:async';
+
+import 'package:easy_localization/easy_localization.dart';
+import 'package:fixhome/common/constants/app_color.dart';
+import 'package:fixhome/features/technician/activity/model/technician_order_model.dart';
+import 'package:fixhome/features/technician/chat/cubit/technician_chat_cubit.dart';
+import 'package:fixhome/features/technician/chat/model/technician_chat_message_model.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+class TechnicianChatPage extends StatelessWidget {
+  final TechnicianOrderModel order;
+
+  const TechnicianChatPage({super.key, required this.order});
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) =>
+          TechnicianChatCubit(orderId: order.id)..load(),
+      child: _TechnicianChatView(order: order),
+    );
+  }
+}
+
+class _TechnicianChatView extends StatefulWidget {
+  final TechnicianOrderModel order;
+
+  const _TechnicianChatView({required this.order});
+
+  @override
+  State<_TechnicianChatView> createState() => _TechnicianChatViewState();
+}
+
+class _TechnicianChatViewState extends State<_TechnicianChatView> {
+  final _messageController = TextEditingController();
+  final _scrollController = ScrollController();
+  Timer? _refreshTimer;
+  bool _didInitialScroll = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshTimer = Timer.periodic(
+      const Duration(seconds: 5),
+      (_) => context.read<TechnicianChatCubit>().refreshLatest(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    _messageController.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadOlder() async {
+    if (!_scrollController.hasClients) return;
+    final previousMaxExtent = _scrollController.position.maxScrollExtent;
+    final loaded = await context.read<TechnicianChatCubit>().loadOlder();
+    if (!loaded || !mounted || !_scrollController.hasClients) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_scrollController.hasClients) return;
+      final addedExtent =
+          _scrollController.position.maxScrollExtent - previousMaxExtent;
+      _scrollController.jumpTo(_scrollController.position.pixels + addedExtent);
+    });
+  }
+
+  Future<void> _sendMessage() async {
+    final sent = await context.read<TechnicianChatCubit>().sendMessage(
+      _messageController.text,
+    );
+    if (!mounted || !sent) return;
+    _messageController.clear();
+    _scrollToBottom();
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_scrollController.hasClients) return;
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final customerName = widget.order.contactName.trim().isEmpty
+        ? 'technician.chat.customer'.tr()
+        : widget.order.contactName;
+
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: AppColors.surface,
+        foregroundColor: AppColors.textPrimary,
+        elevation: 0,
+        titleSpacing: 0,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              customerName,
+              style: const TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            Text(
+              '${'technician.chat.order'.tr()} ${widget.order.orderCode}',
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: BlocConsumer<TechnicianChatCubit, TechnicianChatState>(
+              listenWhen: (previous, current) =>
+                  previous.messages.length != current.messages.length &&
+                  !current.isLoadingOlder,
+              listener: (context, state) {
+                if (!_scrollController.hasClients) return;
+                final isNearBottom =
+                    _scrollController.position.maxScrollExtent -
+                        _scrollController.position.pixels <
+                    120;
+                if (isNearBottom) _scrollToBottom();
+              },
+              builder: (context, state) {
+                if (state.isLoading) {
+                  return const Center(
+                    child: CircularProgressIndicator(color: AppColors.primary),
+                  );
+                }
+
+                if (state.messages.isEmpty && state.errorMessage != null) {
+                  return _TechnicianChatLoadError(
+                    message: state.errorMessage!.tr(),
+                    onRetry: () =>
+                        context.read<TechnicianChatCubit>().load(),
+                  );
+                }
+
+                if (!_didInitialScroll) {
+                  _didInitialScroll = true;
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (_scrollController.hasClients) {
+                      _scrollController.jumpTo(
+                        _scrollController.position.maxScrollExtent,
+                      );
+                    }
+                  });
+                }
+
+                return Column(
+                  children: [
+                    if (state.errorMessage != null)
+                      Material(
+                        color: AppColors.error.withValues(alpha: 0.08),
+                        child: InkWell(
+                          onTap: () => context
+                              .read<TechnicianChatCubit>()
+                              .refreshLatest(),
+                          child: Padding(
+                            padding: const EdgeInsets.all(10),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.error_outline,
+                                  color: AppColors.error,
+                                  size: 18,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    state.errorMessage!.tr(),
+                                    style: const TextStyle(
+                                      color: AppColors.error,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                                Text(
+                                  'common.retry'.tr(),
+                                  style: const TextStyle(
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    Expanded(
+                      child: NotificationListener<ScrollNotification>(
+                        onNotification: (notification) {
+                          if (notification.metrics.pixels < 60 &&
+                              !state.isLoadingOlder &&
+                              state.hasMore) {
+                            _loadOlder();
+                          }
+                          return false;
+                        },
+                        child: ListView.builder(
+                          controller: _scrollController,
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
+                          itemCount:
+                              state.messages.length +
+                              (state.isLoadingOlder ? 1 : 0),
+                          itemBuilder: (context, index) {
+                            if (state.isLoadingOlder && index == 0) {
+                              return const Padding(
+                                padding: EdgeInsets.all(12),
+                                child: Center(
+                                  child: SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }
+                            final messageIndex =
+                                state.isLoadingOlder ? index - 1 : index;
+                            final message = state.messages[messageIndex];
+                            return _TechnicianMessageBubble(
+                              message: message,
+                              isMine:
+                                  message.senderAccountId ==
+                                  state.currentAccountId,
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+          _TechnicianMessageComposer(
+            controller: _messageController,
+            onSend: _sendMessage,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TechnicianChatLoadError extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+
+  const _TechnicianChatLoadError({
+    required this.message,
+    required this.onRetry,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.chat_bubble_outline, color: AppColors.textHint),
+            const SizedBox(height: 12),
+            Text(message, textAlign: TextAlign.center),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: onRetry,
+              child: Text('common.retry'.tr()),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TechnicianMessageBubble extends StatelessWidget {
+  final TechnicianChatMessageModel message;
+  final bool isMine;
+
+  const _TechnicianMessageBubble({
+    required this.message,
+    required this.isMine,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final sentAt = message.sentAt?.toLocal();
+    final time = sentAt == null
+        ? ''
+        : DateFormat('HH:mm', context.locale.languageCode).format(sentAt);
+
+    return Align(
+      alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Column(
+          crossAxisAlignment: isMine
+              ? CrossAxisAlignment.end
+              : CrossAxisAlignment.start,
+          children: [
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.sizeOf(context).width * 0.78,
+              ),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: isMine ? AppColors.primaryDark : AppColors.surface,
+                  borderRadius: BorderRadius.only(
+                    topLeft: const Radius.circular(16),
+                    topRight: const Radius.circular(16),
+                    bottomLeft: Radius.circular(isMine ? 16 : 4),
+                    bottomRight: Radius.circular(isMine ? 4 : 16),
+                  ),
+                  border: isMine ? null : Border.all(color: AppColors.border),
+                ),
+                child: Text(
+                  message.content,
+                  style: TextStyle(
+                    color: isMine ? Colors.white : AppColors.textPrimary,
+                    fontSize: 14,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+            ),
+            if (time.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 4, left: 4, right: 4),
+                child: Text(
+                  time,
+                  style: const TextStyle(
+                    color: AppColors.textHint,
+                    fontSize: 10,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TechnicianMessageComposer extends StatelessWidget {
+  final TextEditingController controller;
+  final VoidCallback onSend;
+
+  const _TechnicianMessageComposer({
+    required this.controller,
+    required this.onSend,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<TechnicianChatCubit, TechnicianChatState>(
+      builder: (context, state) {
+        return SafeArea(
+          top: false,
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+            decoration: const BoxDecoration(
+              color: AppColors.surface,
+              border: Border(top: BorderSide(color: AppColors.border)),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: controller,
+                    minLines: 1,
+                    maxLines: 4,
+                    textCapitalization: TextCapitalization.sentences,
+                    onSubmitted: (_) => onSend(),
+                    decoration: InputDecoration(
+                      hintText: 'technician.chat.message_hint'.tr(),
+                      filled: true,
+                      fillColor: AppColors.surfaceMuted,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 11,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(22),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                SizedBox(
+                  width: 44,
+                  height: 44,
+                  child: IconButton.filled(
+                    onPressed: state.isSending ? null : onSend,
+                    style: IconButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: AppColors.primaryLight,
+                    ),
+                    icon: state.isSending
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.send_rounded, size: 19),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}

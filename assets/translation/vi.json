@@ -144,6 +144,15 @@
       "notification": "Thông báo",
       "profile": "Tài khoản"
     } ,
+    "chat": {
+      "technician": "Kỹ thuật viên",
+      "order": "Đơn hàng",
+      "message_hint": "Nhắn tin cho kỹ thuật viên...",
+      "load_error": "Không thể tải cuộc trò chuyện. Vui lòng thử lại.",
+      "refresh_error": "Không thể đồng bộ tin nhắn mới. Chạm để thử lại.",
+      "load_older_error": "Không thể tải tin nhắn cũ hơn. Chạm để thử lại.",
+      "send_error": "Không thể gửi tin nhắn. Vui lòng thử lại."
+    },
     "account": {
       "default_name": "Tài khoản của tôi",
       "services": "DỊCH VỤ & ƯU ĐÃI",
@@ -438,6 +447,15 @@
       "activity": "Hoạt động",
       "notification": "Thông báo",
       "profile": "Tài khoản"
+    },
+    "chat": {
+      "customer": "Khách hàng",
+      "order": "Đơn hàng",
+      "message_hint": "Nhắn tin cho khách hàng...",
+      "load_error": "Không thể tải cuộc trò chuyện. Vui lòng thử lại.",
+      "refresh_error": "Không thể đồng bộ tin nhắn mới. Chạm để thử lại.",
+      "load_older_error": "Không thể tải tin nhắn cũ hơn. Chạm để thử lại.",
+      "send_error": "Không thể gửi tin nhắn. Vui lòng thử lại."
     },
     "availability": {
       "choose_location": "Chọn vị trí nhận việc",
@@ -792,7 +810,7 @@
       "search_hint": "Tìm mã đơn, tên khách, số điện thoại...",
       "scheduled_badge": "Đơn hẹn giờ",
       "scheduled_slot": "Ca hẹn: {0}",
-      "call_btn": "Gọi",
+      "message_btn": "Nhắn tin",
       "view_detail_btn": "Xem chi tiết",
       "empty_orders": "Chưa có đơn hàng nào trong mục này",
       "status": {
