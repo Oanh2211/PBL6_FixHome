@@ -3,6 +3,7 @@ import 'package:fixhome/common/constants/app_color.dart';
 import 'package:fixhome/features/shared/widget/app_network_image.dart';
 import 'package:fixhome/features/technician/activity/api/technician_activity_api.dart';
 import 'package:fixhome/features/technician/activity/page/technician_order_detail_page.dart';
+import 'package:fixhome/features/technician/chat/page/technician_chat_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../cubit/technician_activity_cubit.dart';
@@ -476,17 +477,22 @@ class _OrderCard extends StatelessWidget {
 
           const SizedBox(height: 12),
 
-          // 2 Nút hành động: Gọi & Xem chi tiết
+          // 2 Nút hành động: Nhắn tin & Xem chi tiết
           Row(
             children: [
               Expanded(
                 flex: 2,
                 child: OutlinedButton.icon(
                   onPressed: () {
-                    // Tích hợp url_launcher tel:${order.contactPhone}
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => TechnicianChatPage(order: order),
+                      ),
+                    );
                   },
-                  icon: const Icon(Icons.phone_outlined, size: 16),
-                  label: Text('technician.activity.call_btn'.tr()),
+                  icon: const Icon(Icons.chat_bubble_outline, size: 16),
+                  label: Text('technician.activity.message_btn'.tr()),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.textPrimary,
                     side: const BorderSide(color: AppColors.border),

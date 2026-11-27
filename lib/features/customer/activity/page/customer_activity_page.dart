@@ -3,6 +3,7 @@ import 'package:fixhome/common/constants/app_color.dart';
 import 'package:fixhome/features/customer/activity/api/activity_api_service.dart';
 import 'package:fixhome/features/customer/activity/model/repair_order_model.dart';
 import 'package:fixhome/features/customer/activity/page/order_tracking_page.dart';
+import 'package:fixhome/features/customer/chat/page/chat_page.dart';
 import 'package:fixhome/features/customer/home/find_technician/page/view_quote_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -266,6 +267,12 @@ class _OrderActivityCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tech = order.matchedQuote?.technician;
+    final canChatWithTechnician = !const {
+      'PENDING',
+      'QUOTING',
+      'WAITING_QUOTES',
+      'NO_TECHNICIAN_FOUND',
+    }.contains(order.status.toUpperCase());
 
     final formattedTime = order.scheduledAt != null
         ? DateFormat('HH:mm dd/MM/yyyy').format(order.scheduledAt!.toLocal())
@@ -558,33 +565,55 @@ class _OrderActivityCard extends StatelessWidget {
           // 2 Nút hành động: Nhắn tin KTV & Theo dõi đơn
           Row(
             children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    // Mở màn hình nhắn tin
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryLight.withValues(
-                      alpha: 0.12,
+              if (canChatWithTechnician) ...[
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      final technicianName = order
+                          .matchedQuote
+                          ?.technician
+                          ?.fullName
+                          .trim();
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ChatPage(
+                            orderId: order.id,
+                            orderCode: order.orderCode,
+                            contactName:
+                                technicianName == null || technicianName.isEmpty
+                                ? 'customer.chat.technician'.tr()
+                                : technicianName,
+                          ),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryLight.withValues(
+                        alpha: 0.12,
+                      ),
+                      foregroundColor: AppColors.primary,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
-                    foregroundColor: AppColors.primary,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                    icon: const Icon(
+                      Icons.chat_bubble_outline_rounded,
+                      size: 18,
                     ),
-                  ),
-                  icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
-                  label: Text(
-                    'customer.activity.chat_technician'.tr(),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
+                    label: Text(
+                      'customer.activity.chat_technician'.tr(),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 10),
+                const SizedBox(width: 10),
+              ],
               Expanded(
                 child: ElevatedButton.icon(
                   onPressed: () {
